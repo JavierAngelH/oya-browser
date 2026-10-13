@@ -70,6 +70,30 @@ describe('oya.browser.start', () => {
     await tickUntil(started, 2000);
     await assert.rejects(started, { status: 504, message: 'Browser c1 did not come up within 6s' });
   });
+
+  it('does not sleep past the ready timeout when the poll interval is longer', async () => {
+    const { oya } = client({
+      [START]: starting,
+      'GET /api/browsers': { body: [] },
+      'GET /api/control/sessions/c1': { body: { id: 'c1', state: 'provisioning' } },
+    });
+    const started = oya.browser.start({ readyTimeoutMs: 1000 });
+    await tickUntil(started, 1000);
+    await assert.rejects(started, { status: 504, message: 'Browser c1 did not come up within 1s' });
+  });
+
+  it('succeeds when the browser dials in during the final capped pause', async () => {
+    const { oya } = client({
+      [START]: starting,
+      // First in-budget check empty; after the last pause (and final check) it is up.
+      'GET /api/browsers': [{ body: [] }, { body: [] }, { body: [{ id: 'c1', health: 'ok' }] }],
+      'GET /api/control/sessions/c1': { body: { id: 'c1', state: 'provisioning' } },
+      'GET /api/browsers/c1': { body: { id: 'c1', cdpUrl: 'wss://c1' } },
+    });
+    const started = oya.browser.start({ readyTimeoutMs: 3000 });
+    await tickUntil(started, 1000);
+    assert.equal((await started).cdpUrl, 'wss://c1');
+  });
 });
 
 describe('oya.browser', () => {
