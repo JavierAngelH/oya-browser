@@ -18,8 +18,8 @@ export interface ReadyChecks {
 /** Session states from which a browser will never come up. */
 const ENDED: ControlSession['state'][] = ['failed', 'stopped', 'unknown_outcome'];
 
-/** Sleeps until the next poll, or until `deadline`, whichever is sooner. */
-const pollPause = (deadline: number) => {
+/** Sleeps until the next poll, or until `deadline`, whichever is sooner, so a short budget is not overshot by a whole poll. */
+export const pollPause = (deadline: number) => {
   const left = deadline - Date.now();
   return left <= 0 ? Promise.resolve() : new Promise((r) => setTimeout(r, Math.min(READY_POLL_MS, left)));
 };
@@ -39,12 +39,11 @@ const notReady = (id: string, timeoutMs: number) =>
  */
 export async function waitUntilConnected(checks: ReadyChecks, id: string, timeoutMs: number): Promise<void> {
   const deadline = Date.now() + timeoutMs;
-  while (Date.now() < deadline) {
+  for (;;) {
     if (await isUp(checks, id)) return;
+    if (Date.now() >= deadline) throw notReady(id, timeoutMs);
     await pollPause(deadline);
   }
-  if (await isUp(checks, id)) return;
-  throw notReady(id, timeoutMs);
 }
 
 /** Whether the browser is in the fleet and alive. */
