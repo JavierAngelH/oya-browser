@@ -42,7 +42,7 @@ export interface Tab {
   /** Whether it is on the Oya start page (the shell draws it, no view is shown). */
   home?: boolean;
   /** Local collection drawn by the shell, never inside the website view. */
-  collection?: 'bookmarks' | 'history';
+  collection?: import('../../shared/library.ts').LibraryKind;
   /** Profile that opened the private collection. */
   libraryPartition?: string;
   /** The real window, for a popup the page opened. */
@@ -59,6 +59,10 @@ export interface Tab {
   navigationPending?: boolean;
   /** Why its page failed, shown on the tab; null when it did not. */
   loadError?: string | null;
+  /** The person's Reload just ended its renderer to recover it: the page reloads when that renderer is reported gone, with no crash message. */
+  recovering?: boolean;
+  /** A person's Reload is asking the page whether it still answers: a second click waits for that. */
+  probing?: boolean;
   /** Its icon as a data: URL, or null. */
   favicon?: string | null;
   /** The icon address last asked for. */

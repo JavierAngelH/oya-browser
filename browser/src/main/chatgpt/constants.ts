@@ -24,9 +24,9 @@ export const CALLBACK_PATH = '/auth/callback';
 /** Loopback only: the browser that signs in is on this machine. */
 export const LOOPBACK_HOST = '127.0.0.1';
 /**
- * The loopback port sign-in returns to. Fixed, as in every client that works
- * (Codex and pi use 1455, so not that one): a different port on each sign-in made
- * OpenAI refuse the code exchange with invalid_grant.
+ * The loopback port sign-in returns to. OpenAI allows any port as long as one
+ * attempt sends the same address twice; a fixed one (not Codex's 1455) is simply
+ * predictable.
  */
 export const LOOPBACK_PORT = 1456;
 /** How long a sign-in may take before the listener gives up. */
@@ -54,6 +54,16 @@ export const CALLBACK_PAGE =
   '<h1>Back to Oya Browser</h1><p>You can close this tab.</p>';
 /** What the app says when ChatGPT shared no email to make the account with. */
 export const NO_EMAIL = 'ChatGPT did not share your email. Use "Have an Oya account?" to sign in instead.';
+/** The plan Sign in with ChatGPT needs, said once so a change of tier is one edit. */
+export const PLAN_NEEDED = 'Oya needs a ChatGPT Plus or Pro plan.';
+/** What the app says when ChatGPT refuses to exchange a sign-in's code: most often an account without a plan that can be shared. */
+export const SIGN_IN_REFUSED = `ChatGPT did not let this account connect. ${PLAN_NEEDED} Sign in again with an account that has one.`;
+/** What the app says when the code exchange failed for a reason that is not the account's: OpenAI busy, rate-limited or unreachable. */
+export const SIGN_IN_FAILED = 'ChatGPT could not finish the sign-in right now. Check your connection and try again.';
+/** What the app says when ChatGPT's page comes back with an error: cancelled, or not allowed for this account. */
+export const SIGN_IN_CANCELLED = `ChatGPT sign-in was cancelled or not allowed. ${PLAN_NEEDED} Sign in again with an account that has one.`;
+/** What the app says when a token comes back without the permission to spend the plan. */
+export const NO_PLAN_SCOPE = `ChatGPT did not let Oya use your plan. ${PLAN_NEEDED} Sign in again and allow "Use your ChatGPT plan".`;
 /** What the app says when this network has used today's sign-ups. */
 export const TOO_MANY_SIGNUPS =
   'Too many sign-ups from this network today. Use "Have an Oya account?" to sign in instead.';
@@ -61,6 +71,10 @@ export const TOO_MANY_SIGNUPS =
 export const HTTP_OK = 200;
 /** HTTP not found, for anything but the callback path. */
 export const HTTP_NOT_FOUND = 404;
+/** The first HTTP server-error status: a refusal at or above it is OpenAI's trouble, not the account's. */
+export const HTTP_SERVER_ERROR = 500;
+/** HTTP request timeout: the endpoint gave up waiting, not a refusal of the account. */
+export const HTTP_TIMEOUT = 408;
 /** HTTP too many requests: the server's sign-up limit for this network. */
 export const HTTP_TOO_MANY = 429;
 /** A model stream that sends nothing for this long has stalled: give up so the server retries it. */
@@ -73,3 +87,11 @@ export const OTHER_MAC_BROWSERS = ['Google Chrome', 'Arc', 'Brave Browser', 'Mic
 export const EDGE_SCHEME = 'microsoft-edge:';
 /** What the app says when another program holds the sign-in's loopback port. */
 export const PORT_BUSY = 'Another app is using the port ChatGPT sign-in returns to (1456). Close it and try again.';
+/** Where a person gets a free Gemini API key, for the first-run key route. */
+export const GEMINI_KEYS_URL = 'https://aistudio.google.com/apikey';
+/** An email address, loosely: something@something.something, no spaces. */
+export const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+/** What the app says when the key route has no usable email. */
+export const BAD_EMAIL = 'Enter your email address.';
+/** What the app says when the key route has no key. */
+export const NO_GEMINI_KEY = 'Paste your Gemini API key.';

@@ -17,6 +17,14 @@ export interface ConnectChatgptOptions {
   importLogins: boolean;
 }
 
+/** What the first-run key route sends: the email the Oya key is made from and the Gemini key. */
+export interface ConnectGeminiOptions extends ConnectChatgptOptions {
+  /** The person's email. */
+  email: string;
+  /** Their Gemini API key. */
+  key: string;
+}
+
 /** The fields every failed call answers with. */
 export interface Failure {
   /** What went wrong, in words for the person. */
@@ -34,7 +42,7 @@ export interface TabSummary {
   /** Whether the tab shows the start page. */
   home: boolean;
   /** Local collection drawn by the shell, never inside the website view. */
-  collection?: 'bookmarks' | 'history';
+  collection?: import('./library.ts').LibraryKind;
   /** The page's icon as a data URL, once fetched. */
   favicon: string | null;
   /** Whether this is the tab on screen. */
@@ -43,6 +51,8 @@ export interface TabSummary {
   pinned?: boolean;
   /** Whether the agent drives this tab; the strip marks it while the agent works. */
   agent?: boolean;
+  /** Whether a call is capturing this tab, so the strip rings its icon. */
+  sharing?: boolean;
   /** Whether the page is loading. */
   loading?: boolean;
   /** Why the last load failed, if it did. */
@@ -51,6 +61,35 @@ export interface TabSummary {
   canGoBack?: boolean;
   /** Whether Forward has somewhere to go. */
   canGoForward?: boolean;
+}
+
+/** A tab carried in another window over this window's strip, which opens a gap for it at `x`. */
+export interface IncomingTab {
+  /** The tab's id in the main process. */
+  id: number;
+  /** The page's title. */
+  title: string;
+  /** The page's icon as a data URL, once fetched. */
+  favicon: string | null;
+  /** Whether it shows the start page, which draws the Oya mark. */
+  home: boolean;
+  /** The pointer's x in this window's content pixels. */
+  x: number;
+}
+
+/**
+ * The live tab share the toolbar chip names: the most recent one whose calling tab
+ * still exists. Hosts only, never a full address; null for a page that is not a website.
+ */
+export interface ShareChip {
+  /** The tab being captured. */
+  sharedTabId: number;
+  /** The tab whose page asked to capture it. */
+  callTabId: number;
+  /** The shared tab's web host, or null. */
+  shared: string | null;
+  /** The calling tab's web host, or null. */
+  call: string | null;
 }
 
 /** A rectangle in window pixels. */
@@ -235,6 +274,10 @@ export interface ShellCalls {
   makeDefaultBrowser(): Promise<void>;
   /** First run: signs in with ChatGPT (making this browser's Oya key when it has none) and connects; importLogins brings in the default browser's logins. */
   connectChatgpt(options: ConnectChatgptOptions): Promise<Payload & Failure>;
+  /** First run without ChatGPT: makes this browser's Oya key from an email when it has none, and puts the project on a Gemini key. */
+  connectGemini(options: ConnectGeminiOptions): Promise<Payload & Failure>;
+  /** Opens Google's page for a free Gemini API key in the system browser. */
+  openGeminiKeys(): Promise<void>;
   /** Where each first-run step stands: ChatGPT, logins, default browser, and the claim link. */
   onboardingStatus(): Promise<Payload>;
   /** Ends the first-run checklist and opens the start page. */
@@ -242,7 +285,7 @@ export interface ShellCalls {
   /** Opens the page where the person turns this browser's key into an Oya account. */
   openClaim(): Promise<void>;
   /** Opens local bookmarks and browsing history. */
-  showLibrary(kind?: 'bookmarks' | 'history'): Promise<void>;
+  showLibrary(kind?: import('./library.ts').LibraryKind): Promise<void>;
   /** Reads only the active local collection in the current profile. */
   readLibrary(tabId: number): Promise<LibraryPresentation>;
   /** Changes an existing saved page after checking this tab and profile. */
@@ -332,6 +375,8 @@ export interface ShellCalls {
   closeTab(id: number): Promise<void>;
   /** Shows a tab. */
   activateTab(id: number): Promise<void>;
+  /** Shows the tab of the call sharing a tab, in whichever window holds it; main knows which, so the shell names none. */
+  goToShareCall(): Promise<void>;
   /** Moves a tab in the strip. */
   moveTab(id: number, toIndex: number): Promise<unknown>;
   /** Opens a tab's right-click menu. */
@@ -432,6 +477,10 @@ export interface ShellEvents {
   onViewSource: PageSource;
   /** The tab list changed. */
   onTabsUpdated: TabSummary[];
+  /** A tab carried in another window hovers this strip (null once it leaves). */
+  onTabIncoming: IncomingTab | null;
+  /** A tab share started, moved or ended (null). */
+  onShareChip: ShareChip | null;
   /** The bookmarks bar changed: shown or hidden, or a bookmark added or removed. */
   onBookmarksBar: Payload;
   /** The routines or their runs changed. */
@@ -471,6 +520,8 @@ export const CALL_CHANNELS = {
   addressSuggestions: 'address-suggestions',
   makeDefaultBrowser: 'make-default-browser',
   connectChatgpt: 'connect-chatgpt',
+  connectGemini: 'connect-gemini',
+  openGeminiKeys: 'open-gemini-keys',
   onboardingStatus: 'onboarding-status',
   finishOnboarding: 'finish-onboarding',
   openClaim: 'open-claim',
@@ -544,6 +595,8 @@ export const CALL_CHANNELS = {
   closeTab: 'close-tab',
   /** Shows a tab. */
   activateTab: 'activate-tab',
+  /** Shows the tab of the call sharing a tab. */
+  goToShareCall: 'go-to-share-call',
   /** Moves a tab in the strip. */
   moveTab: 'move-tab',
   /** Opens a tab's right-click menu. */
@@ -644,6 +697,10 @@ export const EVENT_CHANNELS = {
   onViewSource: 'view-source',
   /** The tab list changed. */
   onTabsUpdated: 'tabs-updated',
+  /** A tab carried in another window hovers this strip (null once it leaves). */
+  onTabIncoming: 'tab-incoming',
+  /** A tab share started, moved or ended. */
+  onShareChip: 'share-chip',
   /** The bookmarks bar changed: shown or hidden, or a bookmark added or removed. */
   onBookmarksBar: 'bookmarks-bar',
   /** The routines or their runs changed. */

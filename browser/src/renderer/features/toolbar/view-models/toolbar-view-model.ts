@@ -5,7 +5,9 @@
  * becoming Stop), and the page's title for the window. Other features ask
  * it to focus the address bar (the command palette's Cmd/Ctrl L).
  */
+import type { LibraryKind } from '../../../../shared/library.ts';
 import { BookmarksBarViewModel } from './bookmarks-bar-view-model.ts';
+import { ShareChipViewModel, type ShareChipBridge } from './share-chip-view-model.ts';
 import { AddressCompletion } from './address-completion.ts';
 import { ViewModel } from '../../../core/view-model.ts';
 import type { OyaBrowser } from '../../../core/bridge.ts';
@@ -76,7 +78,8 @@ export type ToolbarBridge = Pick<
   | 'onUrlChanged'
   | 'onTitleChanged'
   | 'onTabsUpdated'
->;
+> &
+  ShareChipBridge;
 
 /** Before any tab: nothing loading, nowhere to go. */
 const IDLE: NavState = { loading: false, error: '', canGoBack: false, canGoForward: false };
@@ -112,6 +115,8 @@ export class ToolbarViewModel extends ViewModel<ToolbarState> {
   readonly completion: AddressCompletion;
   /** The bookmarks bar under the toolbar. */
   readonly bookmarks: BookmarksBarViewModel;
+  /** The share chip: what a call is capturing, and the way back to it. */
+  readonly share: ShareChipViewModel;
   /** The main process. */
   private readonly bridge: ToolbarBridge;
   /** Last selected tab, to focus a new start page only once. */
@@ -123,7 +128,8 @@ export class ToolbarViewModel extends ViewModel<ToolbarState> {
     this.bridge = bridge;
     this.completion = new AddressCompletion(bridge);
     this.bookmarks = new BookmarksBarViewModel(bridge);
-    this.own(() => (this.completion.dispose(), this.bookmarks.dispose()));
+    this.share = new ShareChipViewModel(bridge);
+    this.own(() => (this.completion.dispose(), this.bookmarks.dispose(), this.share.dispose()));
     this.follow(bridge);
   }
 
@@ -158,7 +164,7 @@ export class ToolbarViewModel extends ViewModel<ToolbarState> {
   }
 
   /** Opens the native history and bookmarks menu above the page. */
-  showLibrary(kind: 'bookmarks' | 'history' = 'history'): void {
+  showLibrary(kind: LibraryKind = 'history'): void {
     void this.bridge.showLibrary(kind);
   }
 

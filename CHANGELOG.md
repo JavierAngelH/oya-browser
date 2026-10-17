@@ -10,6 +10,78 @@ Add what a change does under **Unreleased** as it lands. `make release` refuses 
 
 - Cap ready and desktop-pairing poll sleeps to the remaining timeout, and check once more after the deadline, so a short `readyTimeoutMs` is not overshot by a full poll interval and a browser that dials in during the last pause is not reported as a 504.
 
+## [1.0.196](https://github.com/OyadotAI/oya-browser/releases/tag/v1.0.196) · 2026-10-17
+
+### Changed
+
+- The console follows your system's light or dark appearance until you pick one with the sun/moon button, and switches live when the system does. It used to open dark every time.
+- Light mode reads correctly everywhere: text selection, focus rings, the health dot, error messages and the "Saved" notes now use the theme's colours instead of ones fixed for dark.
+
+## [1.0.195](https://github.com/OyadotAI/oya-browser/releases/tag/v1.0.195) · 2026-10-16
+
+### Fixed
+
+- A ChatGPT account that cannot connect is told so in plain words (Oya needs a ChatGPT Plus or Pro plan; sign in with an account that has one) instead of OpenAI's error code, and a passing OpenAI problem says to try again rather than to upgrade.
+
+## [1.0.194](https://github.com/OyadotAI/oya-browser/releases/tag/v1.0.194) · 2026-10-14
+
+### Fixed
+
+- Tabs drag into another window in AI Mode again. With no agent running, the shown tab in each window was marked as the agent's, so a one-tab window, or the tab just clicked, could not be dragged.
+
+### Fixed
+
+- Playbook replay now re-finds a recorded control and retries when its native agent frame detaches before the action runs.
+
+## [1.0.193](https://github.com/OyadotAI/oya-browser/releases/tag/v1.0.193) · 2026-10-14
+
+### Fixed
+
+- Saving a playbook from an agent run now removes unsupported tab and reload commands that could trigger avoidable replay healing.
+
+## [1.0.192](https://github.com/OyadotAI/oya-browser/releases/tag/v1.0.192) · 2026-10-14
+
+### Fixed
+
+- The active tab's close button works again when many tabs are open. The tab's title covered it, so a click only selected the tab.
+- Sites that open a blank window and then load their own page into it, such as Rippling's course player, get that window. They used to see "your browser is blocking popups", and a tab was left on about:blank.
+
+## [1.0.191](https://github.com/OyadotAI/oya-browser/releases/tag/v1.0.191) · 2026-10-14
+
+### Changed
+
+- Maintenance and fixes.
+
+## [1.0.190](https://github.com/OyadotAI/oya-browser/releases/tag/v1.0.190) · 2026-10-14
+
+### Changed
+
+- Maintenance and fixes.
+
+## [1.0.189](https://github.com/OyadotAI/oya-browser/releases/tag/v1.0.189) · 2026-10-14
+
+### Changed
+
+- Maintenance and fixes.
+
+## [1.0.188](https://github.com/OyadotAI/oya-browser/releases/tag/v1.0.188) · 2026-10-14
+
+### Changed
+
+- Maintenance and fixes.
+
+## [1.0.187](https://github.com/OyadotAI/oya-browser/releases/tag/v1.0.187) · 2026-10-14
+
+### Fixed
+
+- Sign in with ChatGPT keeps this install's ChatGPT registration, as OpenAI requires, so trying again after `invalid_grant` works instead of failing the same way every time. The same fix applies to signing in from a self-hosted server.
+
+## [1.0.186](https://github.com/OyadotAI/oya-browser/releases/tag/v1.0.186) · 2026-10-14
+
+### Fixed
+
+- On the desktop app, a run started from the SDK or the API now gives its tab back as soon as it ends. The next run works in the tab you are watching, instead of a hidden background tab for the first two minutes.
+
 ## [1.0.185](https://github.com/OyadotAI/oya-browser/releases/tag/v1.0.185) · 2026-10-13
 
 ### Changed

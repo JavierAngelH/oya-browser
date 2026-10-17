@@ -13,6 +13,7 @@ const { AgentTab } = require('../../../src/main/control/agent-tab.ts');
 const { SitePermissionStore } = require('../../../src/main/app/site-permissions.ts');
 const { MediaPermissions } = require('../../../src/main/app/media-permissions.ts');
 const { CallGuard } = require('../../../src/main/app/call-guard.ts');
+const { Downloads } = require('../../../src/main/downloads/index.ts');
 
 /** A JSON file that lives in memory: what the on-disk stores are tested over. */
 function memoryFile(value = null) {
@@ -73,6 +74,27 @@ class FakePageContents extends FakeWebContents {
   /** As Electron's. */
   reload() {
     this.record('reload');
+  }
+
+  /** As Electron's: runs code in an isolated world; `probeImpl` answers (a hung page never does). */
+  executeJavaScriptInIsolatedWorld() {
+    this.record('probe');
+    return this.probeImpl ? this.probeImpl() : Promise.resolve(1);
+  }
+
+  /** As Electron's: whether the renderer died (`crashed`, set by a test). */
+  isCrashed() {
+    return !!this.crashed;
+  }
+
+  /** As Electron's: ends the renderer. */
+  forcefullyCrashRenderer() {
+    this.record('crash');
+  }
+
+  /** As Electron's: the renderer's OS process id (`pid`, 0 by default). */
+  getOSProcessId() {
+    return this.pid || 0;
   }
 
   /** As Electron's. */
@@ -147,9 +169,17 @@ class FakeBrowserView {
 
 /** The shell's BrowserWindow: which views it shows, and what it was told. */
 class FakeWindow extends EventEmitter {
-  /** An open window. */
-  constructor() {
+  /** An open window; `options` are what it was built with. */
+  constructor(options = {}) {
     super();
+    /** The construction options. */
+    this.options = options;
+    /** What getNormalBounds() answers; a test sets it. */
+    this.normalBounds = { x: 0, y: 0, width: 1280, height: 860 };
+    /** Set by a test, as the person going fullscreen would. */
+    this.fullScreen = false;
+    /** Set by a test, as the person minimizing to the Dock would. */
+    this.minimized = false;
     /** The shell page. */
     this.webContents = new FakePageContents({});
     this.webContents.mainFrame = {};
@@ -220,6 +250,26 @@ class FakeWindow extends EventEmitter {
   maximize() {
     this.maximized = true;
   }
+
+  /** As Electron's. */
+  isMaximized() {
+    return !!this.maximized;
+  }
+
+  /** As Electron's. */
+  isFullScreen() {
+    return this.fullScreen;
+  }
+
+  /** As Electron's. */
+  isMinimized() {
+    return this.minimized;
+  }
+
+  /** As Electron's: the bounds before maximizing. */
+  getNormalBounds() {
+    return this.normalBounds;
+  }
 }
 
 /** The Electron module, faked: views, menus, dialogs, sessions, IPC. */
@@ -243,12 +293,22 @@ function fakeElectron() {
       items: menuItems,
     },
     nativeTheme: Object.assign(new EventEmitter(), { shouldUseDarkColors: false }),
+    screen: { getAllDisplays: () => [{ workArea: { x: 0, y: 0, width: 1920, height: 1080 } }] },
     autoUpdater: new EventEmitter(),
     shell: {
       opened: [],
       /** Records the link instead of handing it to the operating system. */
       async openExternal(url) {
         this.opened.push(url);
+      },
+      /** Records the file instead of opening it. */
+      async openPath(file) {
+        this.opened.push(file);
+        return '';
+      },
+      /** Records the file instead of showing its folder. */
+      showItemInFolder(file) {
+        this.opened.push(`folder:${file}`);
       },
     },
     dialog: {
@@ -499,6 +559,7 @@ function mainCtx(real = {}) {
   // The real device gate and call guard, on macOS where the guard asks; they read ctx when asked, so swaps still apply.
   ctx.mediaPermissions = new MediaPermissions(ctx, 'darwin');
   ctx.callGuard = new CallGuard(ctx, 'darwin');
+  ctx.downloads = new Downloads(ctx, memoryFile());
   for (const [name, Service] of Object.entries(real)) ctx[name] = new Service(ctx);
   return ctx;
 }

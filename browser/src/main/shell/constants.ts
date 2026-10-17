@@ -31,6 +31,12 @@ export const COMPACT_PANEL_SHARE = 0.45;
 
 /** The main window's first size and the smallest it may shrink to. */
 export const WINDOW_SIZE = { width: 1280, height: 860, minWidth: 600, minHeight: 400 } as const;
+/** The largest saved window side believed: beyond any real display, so a bigger one in the file is corrupt. */
+export const WINDOW_SIZE_MAX = 16384;
+/** How much of a restored window must be on a connected display, each way, to be seen and dragged back. */
+export const WINDOW_VISIBLE_MIN = 100;
+/** The main window's saved bounds, beside config.json. */
+export const WINDOW_BOUNDS_FILE = 'window-bounds.json';
 /** Where macOS draws the traffic lights on the inset title bar: centred on the tabs (34px tall, ending at the strip's 40px; renderer/tabs.css). */
 export const TRAFFIC_LIGHTS = { x: 12, y: 16 } as const;
 /** The shell's background in each theme, before its page paints: the launch stage's own edge colour, so nothing flashes. */
@@ -70,7 +76,7 @@ export const HUMAN_MENU_ITEMS: readonly string[] = ['browser-new-tab', 'browser-
 /** Cmd/Ctrl + this digit goes to the last tab, whatever their number (Chrome's rule). */
 export const LAST_TAB_DIGIT = 9;
 /** Named overlays the renderer may raise over the page. */
-export const OVERLAYS: readonly string[] = ['legacy', 'shell', 'address', 'notifications'];
+export const OVERLAYS: readonly string[] = ['legacy', 'shell', 'address', 'notifications', 'profiles'];
 
 /** Native dialog response selecting an explicit takeover. */
 export const TAKEOVER_CHOICE = 1;

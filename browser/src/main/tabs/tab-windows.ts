@@ -1,15 +1,16 @@
 /**
  * Windows a tab's page opens, and its right-click menu. An anonymous
- * target="_blank" becomes a tab; a sign-in popup and a window the page named
- * stay real windows, protected and adopted onto the tab list.
+ * target="_blank" becomes a tab; a sign-in popup, a window the page named and a
+ * blank one it fills itself stay real windows, protected and adopted onto the tab list.
  */
 import type { BrowserWindow, HandlerDetails, LoadURLOptions, WindowOpenHandlerResponse } from 'electron';
 import type { AppServices } from '../app/services.ts';
-import { isAuthPopup, opensNamedWindow } from './auth-popup.ts';
+import { isAuthPopup, opensBlankWindow, opensNamedWindow } from './auth-popup.ts';
 import { recordingPreferences } from '../recording/preload.ts';
 import { isNativeEngine } from '../native-policy/index.ts';
 import { GmailPopup } from './gmail-popup.ts';
 import { ContextMenu } from './context-menu.ts';
+import { openLink } from './tab-order.ts';
 import { AUTH_POPUP_SIZE, LOCAL_FILE } from './constants.ts';
 import type { Tab, TabView } from './types.ts';
 
@@ -92,10 +93,19 @@ export class TabWindows {
     return { action: 'deny' };
   }
 
-  /** Ordinary links inherit the exact opener session, including ephemeral contexts. */
+  /**
+   * Ordinary links open beside the opener in its exact session, including
+   * ephemeral contexts. A Cmd- or middle-click asks for a background tab, so
+   * the person stays on the page; a plain target="_blank" click shows it.
+   */
   private openSibling(details: HandlerDetails, opener: Tab): void {
-    const id = this.deps.tabs.createTab(details.url, true, loadOptionsFor(details), opener.view.webContents.session);
-    this.markOpener(id, opener);
+    const show = details.disposition !== 'background-tab';
+    const id = openLink(this.deps.tabs, {
+      page: opener.view,
+      url: details.url,
+      show,
+      options: loadOptionsFor(details),
+    });
     this.deps.agentTab.handOff(opener.id, id); // the agent's page opened it: still the agent's
   }
   /** Preserve sign-in and named windows with the opener's persona partition. */
@@ -104,16 +114,10 @@ export class TabWindows {
     const webPreferences = { ...recordingPreferences(this.deps.appDir, !isNativeEngine(session)), session };
     if (isAuthPopup(details.url, details.features))
       return { action: 'allow', overrideBrowserWindowOptions: { ...AUTH_POPUP_SIZE, webPreferences } };
-    if (opensNamedWindow(details.frameName))
+    if (opensNamedWindow(details.frameName) || opensBlankWindow(details.url))
       return { action: 'allow', overrideBrowserWindowOptions: { webPreferences } };
     return null;
   }
-  /** Notes which tab opened a tab, so what a test run's tabs open closes with them. */
-  private markOpener(id: number, opener: Tab): void {
-    const tab: Tab | undefined = this.deps.tabs.list.find((t: Tab) => t.id === id);
-    if (tab && opener) tab.openerId = opener.id;
-  }
-
   /** Protocol interception is installed before a popup can navigate. */
   private protectPopup(window: BrowserWindow): void {
     this.followPopupFocus(window);

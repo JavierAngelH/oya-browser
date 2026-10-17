@@ -5,6 +5,7 @@
  * feature's, after the page-wide ones app/main.tsx loads first.
  */
 import { NotificationsButton, NotificationsCenter } from '../features/notifications/index.ts';
+import { ProfilesCard } from '../features/profiles/index.ts';
 import { BrowserFooter } from './browser-footer.tsx';
 import { useViewModel } from '../hooks/index.ts';
 import { IconButton } from '../ui/index.ts';
@@ -22,7 +23,7 @@ import {
 import { ControlBar, blockedActions } from '../features/control/index.ts';
 import { BrandMark, ThemeSelect, PageBackdrop, Launch, useChromeRoot } from '../features/chrome/index.ts';
 import { TabBar, TabCard } from '../features/tabs/index.ts';
-import { BookmarksBar, Toolbar } from '../features/toolbar/index.ts';
+import { BookmarksBar, ShareChipButton, Toolbar } from '../features/toolbar/index.ts';
 import { LibraryPage } from '../features/library/index.tsx';
 import { StartPage } from '../features/start/index.ts';
 import { PlaybooksPane } from '../features/playbooks/index.ts';
@@ -58,7 +59,11 @@ function ToolbarEnd({ vms }: ShellRootProps) {
   return (
     <>
       <NotificationsButton vm={vms.notifications} />
-      <ProfileButton pill={vms.connection.pill} account={vms.connection.account} />
+      <ProfileButton
+        pill={vms.connection.pill}
+        account={vms.connection.account}
+        onOpen={() => vms.connection.profiles.toggle()}
+      />
     </>
   );
 }
@@ -78,6 +83,7 @@ function BrowserChrome({ vms }: ShellRootProps) {
       />
       <TabCard vm={tabs.card} />
       <Toolbar vm={vms.toolbar} panel={vms.panel} shell={vms.shell} trailing={<ToolbarEnd vms={vms} />}>
+        <ShareChipButton vm={vms.toolbar.share} />
         <UpdatePill vm={c.updates} />
         <ControlBar vm={vms.control} />
       </Toolbar>
@@ -141,6 +147,7 @@ function Dialogs({ vms }: ShellRootProps) {
   return (
     <>
       <NotificationsCenter vm={vms.notifications} />
+      <ProfilesCard vm={vms.connection.profiles} account={vms.connection.account} />
       <ReconnectOverlay vm={c.reconnect} />
       <ShellDialog palette={c.palette} reconnect={c.reconnect} footer={footer} preferences={preferences} {...models} />
     </>
